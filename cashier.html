@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ليت — نظام الكاشير</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1B1611;
+    --surface: #26201A;
+    --surface-2: #221B14;
+    --ink: #F2E9DD;
+    --muted: rgba(242,233,221,0.62);
+    --line: rgba(242,233,221,0.12);
+    --brand: #D98F4C;
+    --brand-ink: #1B1611;
+    --staff: #6E9C87;
+    --radius: 2px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:'Tajawal', sans-serif;}
+  button{font-family:inherit;}
+  #root{height:100vh;overflow:hidden;position:relative;}
+
+  /* ---------- Header + section nav ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:16px 28px;border-bottom:1px solid var(--line);background:var(--bg);}
+  .logo{direction:ltr;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:19px;
+    letter-spacing:5px;color:var(--ink);}
+  .top-nav{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:4px;}
+  .top-nav-tab{font-size:13.5px;color:var(--muted);padding:9px 18px;border-radius:var(--radius);
+    cursor:pointer;font-weight:600;white-space:nowrap;}
+  .top-nav-tab.active{background:var(--brand);color:var(--brand-ink);}
+  .user-chip{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);}
+  .logout-btn{border:1px solid var(--line);border-radius:var(--radius);padding:7px 14px;
+    cursor:pointer;color:var(--ink);font-size:12.5px;}
+  .logout-btn:active{background:var(--surface);}
+
+  /* ---------- Login screen ---------- */
+  .login-screen{height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .login-card{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:32px 28px;}
+  .login-logo{direction:ltr;font-family:'IBM Plex Mono',monospace;font-size:22px;letter-spacing:6px;
+    text-align:center;margin-bottom:6px;}
+  .login-sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:26px;}
+  .login-field{margin-bottom:14px;}
+  .login-field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:7px;}
+  .login-field input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 14px;color:var(--ink);font-size:14.5px;}
+  .login-btn{width:100%;padding:14px;background:var(--brand);color:var(--brand-ink);border:none;
+    border-radius:var(--radius);font-weight:700;font-size:15px;cursor:pointer;margin-top:8px;}
+  .login-error{color:#E08A6B;font-size:12.5px;margin-bottom:10px;text-align:center;}
+
+  .cat-bar{display:flex;gap:22px;padding:14px 28px;border-bottom:1px solid var(--line);overflow-x:auto;}
+  .cat-tab{font-size:14px;color:var(--muted);padding:6px 0;border-bottom:2px solid transparent;
+    cursor:pointer;white-space:nowrap;}
+  .cat-tab.active{color:var(--ink);font-weight:600;border-color:var(--brand);}
+
+  /* ---------- Sale layout ---------- */
+  .sale-body{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 129px);}
+  .menu-panel{overflow-y:auto;padding:20px 24px 40px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+  .item-card{position:relative;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px;text-align:right;cursor:pointer;
+    min-height:88px;display:flex;flex-direction:column;justify-content:space-between;
+    transition:transform .1s ease, border-color .1s ease;-webkit-tap-highlight-color:transparent;}
+  .item-card:active{transform:scale(.95);border-color:var(--brand);}
+  .item-name{font-size:15px;font-weight:600;line-height:1.3;}
+  .item-price{font-family:'IBM Plex Mono',monospace;direction:ltr;font-size:13px;color:var(--brand);margin-top:10px;font-weight:500;}
+  .qty-badge{position:absolute;top:-8px;left:-8px;background:var(--brand);color:var(--brand-ink);
+    min-width:22px;height:22px;border-radius:50%;font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;padding:0 4px;}
+
+  /* ---------- Ticket panel ---------- */
+  .ticket-panel{background:var(--surface-2);border-left:1px solid var(--line);
+    padding:18px 18px 16px;display:flex;flex-direction:column;height:100%;overflow:hidden;}
+  .ticket-title{font-weight:700;font-size:16px;}
+  .ticket-sub{font-size:11px;color:var(--muted);margin:3px 0 14px;}
+  .ticket-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+  .ticket-empty{color:var(--muted);font-size:13px;text-align:center;margin-top:50px;line-height:1.6;}
+  .ticket-line{display:flex;justify-content:space-between;align-items:center;
+    padding-bottom:10px;border-bottom:1px dashed var(--line);}
+  .ticket-line-name{font-size:13.5px;font-weight:600;}
+  .ticket-line-price{font-family:'IBM Plex Mono',monospace;direction:ltr;font-size:11px;color:var(--muted);}
+  .qty-control{display:flex;align-items:center;gap:7px;}
+  .qty-btn{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);
+    background:var(--surface);font-size:15px;line-height:1;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;color:var(--ink);}
+  .qty-btn:active{background:var(--line);}
+  .qty-value{min-width:14px;text-align:center;font-size:13px;font-weight:700;}
+  .ticket-footer{border-top:1px solid var(--line);padding-top:12px;margin-top:6px;}
+  .ticket-total-row{display:flex;justify-content:space-between;align-items:baseline;
+    font-weight:700;font-size:16px;margin-bottom:12px;}
+  .ticket-total-row span:last-child{color:var(--brand);font-family:'IBM Plex Mono',monospace;direction:ltr;}
+  .pay-go-btn{width:100%;padding:15px;background:var(--brand);color:var(--brand-ink);
+    border:none;border-radius:var(--radius);font-weight:700;font-size:15px;cursor:pointer;}
+  .pay-go-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+  .clear-btn{width:100%;padding:10px;margin-top:8px;background:transparent;border:1px solid var(--line);
+    color:var(--muted);border-radius:var(--radius);font-size:12.5px;cursor:pointer;}
+
+  /* ---------- Payment screen ---------- */
+  .pay-screen{height:100vh;overflow-y:auto;padding:24px 28px 60px;box-sizing:border-box;}
+  .pay-wrap{max-width:460px;margin:0 auto;}
+  .pay-header{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+  .back-btn{padding:10px 18px;border:1px solid var(--line);background:var(--surface);
+    border-radius:var(--radius);font-size:13.5px;cursor:pointer;color:var(--ink);}
+  .pay-title{font-weight:700;font-size:18px;}
+  .summary-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin-bottom:20px;}
+  .summary-line{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;color:var(--muted);}
+  .summary-line span:first-child{color:var(--ink);}
+  .summary-line span:last-child{font-family:'IBM Plex Mono',monospace;direction:ltr;}
+  .summary-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;
+    padding-top:10px;border-top:1px solid var(--line);font-weight:700;font-size:16px;}
+  .summary-total-row span:last-child{font-family:'IBM Plex Mono',monospace;direction:ltr;color:var(--brand);}
+  .field-label{font-size:12.5px;color:var(--muted);margin:16px 0 8px;}
+  .pay-methods{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .pay-method{flex:1;min-width:80px;border:1px solid var(--line);border-radius:var(--radius);padding:13px 6px;
+    text-align:center;font-size:12.5px;cursor:pointer;color:var(--muted);transition:border-color .15s ease,color .15s ease;}
+  .pay-method.active{border-color:var(--brand);color:var(--brand);background:rgba(217,143,76,0.08);}
+  .cash-box input{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 14px;color:var(--ink);font-size:16px;font-family:'IBM Plex Mono',monospace;direction:ltr;
+    width:100%;text-align:left;}
+  .quick-cash{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .quick-cash-btn{flex:1;min-width:60px;padding:9px;border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--surface);color:var(--ink);font-size:12.5px;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+  .change-row{display:flex;justify-content:space-between;margin-top:14px;padding:12px 14px;
+    background:var(--surface);border-radius:var(--radius);border:1px solid var(--line);font-size:14px;}
+  .change-row span:last-child{font-family:'IBM Plex Mono',monospace;direction:ltr;font-weight:700;color:var(--brand);}
+  .terminal-note{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;text-align:center;font-size:13px;color:var(--muted);margin-top:4px;}
+  .pay-error{color:#E08A6B;font-size:12.5px;margin-top:10px;}
+  .pay-btn{width:100%;padding:16px;background:var(--brand);color:var(--brand-ink);border:none;
+    border-radius:var(--radius);font-weight:700;font-size:15.5px;cursor:pointer;margin-top:18px;}
+  .pay-btn:disabled{opacity:.6;cursor:not-allowed;}
+  .pay-overlay{position:fixed;inset:0;background:rgba(27,22,17,.94);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;z-index:60;}
+  .spinner{width:38px;height:38px;border:3px solid var(--line);border-top-color:var(--brand);
+    border-radius:50%;animation:leet-spin .8s linear infinite;}
+  @keyframes leet-spin{to{transform:rotate(360deg);}}
+  .pay-overlay p{font-size:14.5px;color:var(--ink);}
+
+  /* ---------- Receipt screen ---------- */
+  .receipt-screen{height:100vh;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:16px;padding:40px;}
+  .receipt-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 24px;width:100%;max-width:320px;}
+  .receipt-check{width:52px;height:52px;border-radius:50%;background:var(--staff);color:#1B1611;
+    display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;}
+  .receipt-num{font-family:'IBM Plex Mono',monospace;direction:ltr;text-align:center;font-size:26px;
+    font-weight:700;color:var(--brand);margin-bottom:4px;}
+  .receipt-sub{text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:16px;}
+  .receipt-line{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;
+    border-bottom:1px dashed var(--line);}
+  .receipt-line span:last-child{font-family:'IBM Plex Mono',monospace;direction:ltr;}
+  .receipt-total{display:flex;justify-content:space-between;font-weight:700;font-size:15px;
+    margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+  .receipt-total span:last-child{font-family:'IBM Plex Mono',monospace;direction:ltr;color:var(--brand);}
+  .receipt-meta{font-size:12px;color:var(--muted);margin-top:10px;display:flex;justify-content:space-between;}
+  .receipt-actions{display:flex;gap:10px;width:100%;max-width:320px;}
+  .receipt-actions button{flex:1;padding:13px;border-radius:var(--radius);font-size:14px;cursor:pointer;}
+  .btn-new{background:var(--brand);color:var(--brand-ink);border:none;font-weight:700;}
+  .btn-print{background:transparent;border:1px solid var(--line);color:var(--ink);}
+
+  /* ---------- Queue screen ---------- */
+  .queue-screen{padding:22px 28px;height:calc(100vh - 65px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;}
+  .queue-count{font-size:12.5px;color:var(--muted);margin-bottom:16px;}
+  .queue-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:20px;}
+  .order-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;border-right:4px solid var(--staff);}
+  .order-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .order-num{font-weight:800;font-size:16px;}
+  .order-badge{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:20px;
+    padding:2px 9px;margin-inline-start:8px;}
+  .order-time{font-size:11.5px;color:var(--muted);}
+  .order-items{font-size:13px;color:var(--ink);line-height:1.9;margin-bottom:10px;}
+  .order-bottom{display:flex;justify-content:space-between;align-items:center;}
+  .order-total{font-family:'IBM Plex Mono',monospace;direction:ltr;font-weight:700;font-size:14px;color:var(--brand);}
+  .done-btn{padding:9px 16px;background:var(--staff);color:#1B1611;border:none;
+    border-radius:var(--radius);font-size:13px;cursor:pointer;}
+  .empty-note{color:var(--muted);text-align:center;margin-top:60px;font-size:14px;}
+
+  /* ---------- Sales report screen ---------- */
+  .sales-screen{padding:22px 28px;height:calc(100vh - 65px);box-sizing:border-box;overflow-y:auto;}
+  .stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
+  .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;}
+  .stat-card b{display:block;font-family:'IBM Plex Mono',monospace;direction:ltr;font-size:22px;color:var(--brand);margin-bottom:4px;}
+  .stat-card span{font-size:12px;color:var(--muted);}
+  .breakdown{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;}
+  .breakdown-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:10px 14px;font-size:12.5px;color:var(--muted);}
+  .breakdown-item b{color:var(--ink);font-family:'IBM Plex Mono',monospace;direction:ltr;}
+  .sales-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;
+    border-bottom:1px dashed var(--line);font-size:13px;}
+  .sales-row-id{font-family:'IBM Plex Mono',monospace;direction:ltr;color:var(--muted);width:48px;}
+  .sales-row-mid{flex:1;padding:0 10px;}
+  .sales-row-total{font-family:'IBM Plex Mono',monospace;direction:ltr;font-weight:600;color:var(--brand);}
+  .status-pill{font-size:10px;padding:2px 8px;border-radius:20px;margin-inline-start:8px;}
+  .status-pending{background:rgba(217,143,76,0.15);color:var(--brand);}
+  .status-done{background:rgba(110,156,135,0.18);color:var(--staff);}
+
+  @media print{
+    body *{visibility:hidden;}
+    .receipt-card, .receipt-card *{visibility:visible;}
+    .receipt-card{position:absolute;top:0;left:0;width:280px;border:none;}
+  }
+
+  @media (max-width: 900px){
+    .sale-body{grid-template-columns:1fr;height:calc(100vh - 175px);}
+    .ticket-panel{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;max-height:75vh;
+      border-radius:16px 16px 0 0;border-left:none;border-top:1px solid var(--line);
+      box-shadow:0 -6px 24px rgba(0,0,0,.45);z-index:40;transform:translateY(100%);transition:transform .25s ease;}
+    .ticket-panel.open{transform:translateY(0);}
+    .mobile-ticket-bar{display:flex !important;}
+    .topbar{padding:12px 16px;flex-wrap:wrap;gap:10px;}
+    .cat-bar{padding:10px 16px;}
+    .menu-panel{padding:14px 14px 90px;}
+  }
+  .mobile-ticket-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--brand);
+    color:var(--brand-ink);padding:14px 20px;align-items:center;justify-content:space-between;
+    z-index:30;cursor:pointer;border:none;font-weight:700;font-size:14px;}
+  .cart-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:35;}
+  .cart-backdrop.show{display:block;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+const CATEGORIES = [
+  {id:'espresso', name:'بار الإسبريسو'},
+  {id:'daily',    name:'قهوة اليوم'},
+  {id:'cold',     name:'المشروبات الباردة'},
+  {id:'bakery',   name:'من الفاترينة'}
+];
+
+const ITEMS = [
+  {id:'esp1', cat:'espresso', name:'إسبريسو', price:12},
+  {id:'esp2', cat:'espresso', name:'دبل إسبريسو', price:15},
+  {id:'esp3', cat:'espresso', name:'أمريكانو', price:14},
+  {id:'esp4', cat:'espresso', name:'كورتادو', price:16},
+  {id:'esp5', cat:'espresso', name:'فلات وايت', price:18},
+  {id:'esp6', cat:'espresso', name:'كابتشينو', price:17},
+  {id:'esp7', cat:'espresso', name:'لاتيه', price:18},
+  {id:'daily1', cat:'daily', name:'تقطير اليوم', price:20},
+  {id:'cold1', cat:'cold', name:'كولد برو', price:18},
+  {id:'cold2', cat:'cold', name:'آيس لاتيه', price:19},
+  {id:'cold3', cat:'cold', name:'سبانش لاتيه', price:20},
+  {id:'cold4', cat:'cold', name:'آيس أمريكانو', price:15},
+  {id:'bak1', cat:'bakery', name:'كرواسون زبدة', price:10},
+  {id:'bak2', cat:'bakery', name:'رول القرفة', price:14},
+  {id:'bak3', cat:'bakery', name:'كوكيز البيت', price:8},
+];
+
+const ORDERS_KEY = 'leet-orders';
+const SESSION_KEY = 'leet-cashier-session';
+
+/* عدّل هذي القائمة بأسماء موظفينك واليوزر/الباسورد الخاص فيهم */
+const STAFF = [
+  {username:'cashier1', password:'1234', name:'الكاشير الأول'},
+  {username:'cashier2', password:'1234', name:'الكاشير الثاني'},
+];
+
+let state = {
+  screen: 'login',   // login | sale | pay | receipt | queue | sales
+  currentUser: null,
+  loginError: '',
+  cat: 'espresso',
+  cart: {},
+  ticketOpen: false,
+  payMethod: 'cash',
+  cashReceived: '',
+  paying: false,
+  payError: '',
+  lastOrder: null,
+  queueOrders: [],
+  salesOrders: []
+};
+let queuePoll = null;
+
+window.addEventListener('storage', (e)=>{
+  if(e.key === ORDERS_KEY && state.screen === 'queue') refreshQueue();
+});
+
+function itemById(id){ return ITEMS.find(i => i.id === id); }
+function cartCount(){ return Object.values(state.cart).reduce((s,q)=>s+q,0); }
+function cartTotal(){ return Object.entries(state.cart).reduce((s,[id,q])=> s + itemById(id).price*q, 0); }
+
+function addItem(id){ state.cart[id] = (state.cart[id]||0) + 1; render(); }
+function changeQty(id, delta){
+  const next = (state.cart[id]||0) + delta;
+  if(next <= 0){ delete state.cart[id]; } else { state.cart[id] = next; }
+  render();
+}
+function clearTicket(){ state.cart = {}; render(); }
+
+async function readQueue(){
+  try{ const raw = localStorage.getItem(ORDERS_KEY); return raw ? JSON.parse(raw) : []; }
+  catch(e){ return []; }
+}
+async function writeQueue(queue){
+  try{ localStorage.setItem(ORDERS_KEY, JSON.stringify(queue)); }
+  catch(e){ console.error('storage error', e); }
+}
+
+function payMethodLabel(key){
+  return {cash:'نقدي', mada:'مدى', card:'فيزا / ماستركارد', applepay:'Apple Pay'}[key] || key;
+}
+
+/* ---------- Login ---------- */
+function tryLogin(username, password){
+  const staff = STAFF.find(s => s.username === username && s.password === password);
+  if(!staff){
+    state.loginError = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+    render();
+    return;
+  }
+  state.currentUser = {username: staff.username, name: staff.name};
+  state.loginError = '';
+  try{ sessionStorage.setItem(SESSION_KEY, JSON.stringify(state.currentUser)); }catch(e){}
+  goSection('sale');
+}
+function logout(){
+  state.currentUser = null;
+  try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
+  if(queuePoll){ clearInterval(queuePoll); queuePoll = null; }
+  state.screen = 'login';
+  state.loginError = '';
+  render();
+}
+function restoreSession(){
+  try{
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if(raw){ state.currentUser = JSON.parse(raw); state.screen = 'sale'; }
+  }catch(e){}
+}
+
+/* ---------- Navigation between top-level sections ---------- */
+function goSection(name){
+  if(queuePoll){ clearInterval(queuePoll); queuePoll = null; }
+  state.screen = name;
+  if(name === 'queue'){
+    refreshQueue();
+    queuePoll = setInterval(refreshQueue, 3500);
+  }
+  if(name === 'sales'){ refreshSales(); }
+  render();
+}
+
+/* ---------- Sale / ticket ---------- */
+function goToPay(){
+  if(cartCount() === 0) return;
+  state.ticketOpen = false;
+  state.payError = '';
+  state.cashReceived = '';
+  state.payMethod = 'cash';
+  state.screen = 'pay';
+  render();
+}
+function backToSale(){ state.screen = 'sale'; render(); }
+function selectPayMethod(key){ state.payMethod = key; state.payError = ''; render(); }
+function setCash(v){ state.cashReceived = v; state.payError=''; render(); }
+function quickCash(amount){ state.cashReceived = String(amount); state.payError=''; render(); }
+
+function processPayment(){
+  if(state.payMethod === 'cash'){
+    const received = parseFloat(state.cashReceived);
+    if(isNaN(received) || received < cartTotal()){
+      state.payError = 'المبلغ المستلم أقل من الإجمالي';
+      render();
+      return;
+    }
+  }
+  state.paying = true;
+  render();
+  setTimeout(finalizeSale, 700);
+}
+
+async function finalizeSale(){
+  const items = Object.entries(state.cart).map(([id,qty])=>{
+    const it = itemById(id);
+    return {name: it.name, price: it.price, qty};
+  });
+  const total = cartTotal();
+  const queue = await readQueue();
+  const nextId = queue.reduce((m,o)=>Math.max(m,o.id),0) + 1;
+  const received = state.payMethod === 'cash' ? parseFloat(state.cashReceived) : null;
+  const order = {
+    id: nextId, items, total, status:'pending', time: Date.now(),
+    payMethod: payMethodLabel(state.payMethod), source: 'cashier',
+    cashier: state.currentUser ? state.currentUser.name : '',
+    cashReceived: received, changeDue: received!==null ? +(received-total).toFixed(2) : null
+  };
+  queue.push(order);
+  await writeQueue(queue);
+
+  state.lastOrder = order;
+  state.cart = {};
+  state.paying = false;
+  state.screen = 'receipt';
+  render();
+}
+function newSale(){
+  state.screen = 'sale';
+  state.cat = 'espresso';
+  state.lastOrder = null;
+  render();
+}
+function printReceipt(){ window.print(); }
+
+function toggleTicket(){ state.ticketOpen = !state.ticketOpen; render(); }
+function closeTicket(){ state.ticketOpen = false; render(); }
+
+/* ---------- Queue (orders needing prep) ---------- */
+async function refreshQueue(){
+  const queue = await readQueue();
+  state.queueOrders = queue.filter(o => o.status === 'pending').sort((a,b)=>a.id-b.id);
+  if(state.screen === 'queue') renderQueueListOnly();
+}
+async function markDone(orderId){
+  const queue = await readQueue();
+  const o = queue.find(x=>x.id === orderId);
+  if(o) o.status = 'done';
+  await writeQueue(queue);
+  await refreshQueue();
+  render();
+}
+
+/* ---------- Sales report ---------- */
+async function refreshSales(){
+  const queue = await readQueue();
+  const todayStr = new Date().toDateString();
+  state.salesOrders = queue.filter(o => new Date(o.time).toDateString() === todayStr)
+    .sort((a,b)=>b.id-a.id);
+}
+
+function timeAgo(ts){
+  const mins = Math.max(0, Math.round((Date.now()-ts)/60000));
+  if(mins < 1) return 'الآن';
+  if(mins === 1) return 'قبل دقيقة';
+  return 'قبل ' + mins + ' دقائق';
+}
+function timeHM(ts){
+  return new Date(ts).toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'});
+}
+
+/* ---------- Rendering ---------- */
+function render(){
+  const root = document.getElementById('root');
+  if(state.screen === 'login'){ root.innerHTML = renderLoginScreen(); bindLogin(); return; }
+  if(state.screen === 'pay'){ root.innerHTML = renderPayScreen(); bindPay(); return; }
+  if(state.screen === 'receipt'){ root.innerHTML = renderReceiptScreen(); bindReceipt(); return; }
+  if(state.screen === 'queue'){ root.innerHTML = renderQueueScreen(); bindQueue(); return; }
+  if(state.screen === 'sales'){ root.innerHTML = renderSalesScreen(); bindSales(); return; }
+  root.innerHTML = renderSaleScreen();
+  bindSale();
+}
+
+function topNav(active){
+  const tabs = [
+    {id:'sale', label:'بيع جديد'},
+    {id:'queue', label:'الطلبات الجارية'},
+    {id:'sales', label:'مبيعات اليوم'}
+  ];
+  return `
+    <div class="topbar">
+      <div class="logo">L E E T·</div>
+      <div class="top-nav">
+        ${tabs.map(t=>`<div class="top-nav-tab ${active===t.id?'active':''}" data-goto="${t.id}">${t.label}</div>`).join('')}
+      </div>
+      <div class="user-chip">
+        <span>${state.currentUser ? state.currentUser.name : ''}</span>
+        <div class="logout-btn" data-logout>خروج</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLoginScreen(){
+  return `
+    <div class="login-screen">
+      <div class="login-card">
+        <div class="login-logo">L E E T·</div>
+        <div class="login-sub">تسجيل دخول الكاشير</div>
+        ${state.loginError ? `<div class="login-error">${state.loginError}</div>` : ''}
+        <div class="login-field">
+          <label>اسم المستخدم</label>
+          <input id="login-username" type="text" autocomplete="username">
+        </div>
+        <div class="login-field">
+          <label>كلمة المرور</label>
+          <input id="login-password" type="password" autocomplete="current-password">
+        </div>
+        <button class="login-btn" data-login>دخول</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSaleScreen(){
+  const catTabs = CATEGORIES.map(c =>
+    `<div class="cat-tab ${c.id===state.cat?'active':''}" data-cat="${c.id}">${c.name}</div>`
+  ).join('');
+
+  const items = ITEMS.filter(i => i.cat === state.cat).map(i => {
+    const qty = state.cart[i.id]||0;
+    return `<div class="item-card" data-add="${i.id}">
+      ${qty>0 ? `<div class="qty-badge">${qty}</div>` : ''}
+      <div class="item-name">${i.name}</div>
+      <div class="item-price">${i.price} ر.س</div>
+    </div>`;
+  }).join('');
+
+  const lines = Object.entries(state.cart).map(([id,qty])=>{
+    const it = itemById(id);
+    return `<div class="ticket-line">
+      <div>
+        <div class="ticket-line-name">${it.name}</div>
+        <div class="ticket-line-price">${it.price} ر.س</div>
+      </div>
+      <div class="qty-control">
+        <div class="qty-btn" data-dec="${id}">−</div>
+        <div class="qty-value">${qty}</div>
+        <div class="qty-btn" data-inc="${id}">+</div>
+      </div>
+    </div>`;
+  }).join('') || `<div class="ticket-empty">اختر أصناف الزبون<br>وبتظهر هنا</div>`;
+
+  const total = cartTotal();
+  const count = cartCount();
+  const disabled = count===0 ? 'disabled' : '';
+
+  return `
+    ${topNav('sale')}
+    <div class="cat-bar">${catTabs}</div>
+    <div class="sale-body">
+      <div class="menu-panel"><div class="grid">${items}</div></div>
+      <div class="cart-backdrop ${state.ticketOpen?'show':''}" data-close-ticket></div>
+      <div class="ticket-panel ${state.ticketOpen?'open':''}">
+        <div class="ticket-title">فاتورة الزبون</div>
+        <div class="ticket-sub">اختر الأصناف وحدد طريقة الدفع</div>
+        <div class="ticket-list">${lines}</div>
+        <div class="ticket-footer">
+          <div class="ticket-total-row"><span>الإجمالي</span><span>${total} ر.س</span></div>
+          <button class="pay-go-btn" data-go-pay ${disabled}>الدفع</button>
+          ${count>0 ? `<button class="clear-btn" data-clear-ticket>إفراغ الفاتورة</button>` : ''}
+        </div>
+      </div>
+    </div>
+    <button class="mobile-ticket-bar" data-toggle-ticket>
+      <span>${count>0 ? count+' صنف' : 'الفاتورة فارغة'}</span>
+      <span>${total} ر.س</span>
+    </button>
+  `;
+}
+
+function renderPayScreen(){
+  const lines = Object.entries(state.cart).map(([id,qty])=>{
+    const it = itemById(id);
+    return `<div class="summary-line"><span>${it.name} × ${qty}</span><span>${it.price*qty} ر.س</span></div>`;
+  }).join('');
+  const total = cartTotal();
+
+  const methods = ['cash','mada','card','applepay'].map(key=>{
+    const label = {cash:'نقدي', mada:'مدى', card:'فيزا/ماستركارد', applepay:'Apple Pay'}[key];
+    return `<div class="pay-method ${state.payMethod===key?'active':''}" data-pay-method="${key}">${label}</div>`;
+  }).join('');
+
+  let methodBody = '';
+  if(state.payMethod === 'cash'){
+    const received = parseFloat(state.cashReceived);
+    const change = !isNaN(received) ? Math.max(0, +(received-total).toFixed(2)) : null;
+    methodBody = `
+      <div class="cash-box">
+        <input id="cash-input" type="text" inputmode="decimal" placeholder="المبلغ المستلم" value="${state.cashReceived}">
+        <div class="quick-cash">
+          ${[total, Math.ceil(total/10)*10, Math.ceil(total/50)*50].filter((v,i,a)=>a.indexOf(v)===i).map(v=>
+            `<div class="quick-cash-btn" data-quick-cash="${v}">${v} ر.س</div>`
+          ).join('')}
+        </div>
+      </div>
+      ${change!==null ? `<div class="change-row"><span>الباقي للزبون</span><span>${change} ر.س</span></div>` : ''}
+    `;
+  } else {
+    methodBody = `<div class="terminal-note">مرر البطاقة على جهاز الدفع، وبعد ما توافق العملية اضغط تأكيد بالأسفل.</div>`;
+  }
+
+  const overlay = state.paying ? `
+    <div class="pay-overlay"><div class="spinner"></div><p>جارٍ إتمام العملية...</p></div>
+  ` : '';
+
+  return `
+    <div class="pay-screen">
+      <div class="pay-wrap">
+        <div class="pay-header">
+          <div class="back-btn" data-back-sale>رجوع</div>
+          <div class="pay-title">الدفع</div>
+        </div>
+        <div class="summary-box">
+          ${lines}
+          <div class="summary-total-row"><span>الإجمالي</span><span>${total} ر.س</span></div>
+        </div>
+        <div class="field-label">طريقة الدفع</div>
+        <div class="pay-methods">${methods}</div>
+        ${methodBody}
+        ${state.payError ? `<div class="pay-error">${state.payError}</div>` : ''}
+        <button class="pay-btn" data-confirm-pay ${state.paying?'disabled':''}>تأكيد الدفع — ${total} ر.س</button>
+      </div>
+    </div>
+    ${overlay}
+  `;
+}
+
+function renderReceiptScreen(){
+  const o = state.lastOrder;
+  const itemLines = o.items.map(i=>
+    `<div class="receipt-line"><span>${i.name} × ${i.qty}</span><span>${i.price*i.qty}</span></div>`
+  ).join('');
+  return `
+    <div class="receipt-screen">
+      <div class="receipt-card">
+        <div class="receipt-check">✓</div>
+        <div class="receipt-num">#${o.id}</div>
+        <div class="receipt-sub">${o.payMethod}${o.changeDue!==null && o.changeDue>0 ? ' — الباقي '+o.changeDue+' ر.س' : ''}</div>
+        ${itemLines}
+        <div class="receipt-total"><span>الإجمالي</span><span>${o.total} ر.س</span></div>
+        <div class="receipt-meta"><span>ليت للقهوة</span><span>${timeHM(o.time)}</span></div>
+      </div>
+      <div class="receipt-actions">
+        <button class="btn-print" data-print>طباعة الإيصال</button>
+        <button class="btn-new" data-new-sale>عملية جديدة</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderQueueScreen(){
+  return `
+    ${topNav('queue')}
+    <div class="queue-screen">
+      <div class="queue-count">${state.queueOrders.length} طلب بانتظار التحضير</div>
+      <div class="queue-list" id="queue-list">${renderQueueList()}</div>
+    </div>
+  `;
+}
+function renderQueueList(){
+  if(state.queueOrders.length === 0) return `<div class="empty-note">ما فيه طلبات حالياً</div>`;
+  return state.queueOrders.map(o=>{
+    const itemsHtml = o.items.map(i => `${i.name} × ${i.qty}`).join('<br>');
+    const sourceLabel = o.source === 'cashier' ? ('كاشير' + (o.cashier ? ': '+o.cashier : '')) : 'ذاتي (آيباد)';
+    return `<div class="order-card">
+      <div class="order-top">
+        <div><span class="order-num">طلب #${o.id}</span><span class="order-badge">${sourceLabel}</span></div>
+        <div class="order-time">${timeAgo(o.time)}</div>
+      </div>
+      <div class="order-items">${itemsHtml}</div>
+      <div class="order-bottom">
+        <div class="order-total">${o.total} ر.س</div>
+        <button class="done-btn" data-done="${o.id}">تم التحضير</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderQueueListOnly(){
+  const el = document.getElementById('queue-list');
+  if(el) el.innerHTML = renderQueueList();
+  const countEl = document.querySelector('.queue-count');
+  if(countEl) countEl.textContent = state.queueOrders.length + ' طلب بانتظار التحضير';
+  bindQueueButtons();
+}
+
+function renderSalesScreen(){
+  const orders = state.salesOrders;
+  const total = orders.reduce((s,o)=>s+o.total,0);
+  const count = orders.length;
+  const avg = count ? Math.round(total/count) : 0;
+
+  const byMethod = {};
+  orders.forEach(o=>{ byMethod[o.payMethod] = (byMethod[o.payMethod]||0) + o.total; });
+  const breakdown = Object.entries(byMethod).map(([m,v])=>
+    `<div class="breakdown-item">${m}: <b>${v} ر.س</b></div>`
+  ).join('') || `<div class="breakdown-item">لا يوجد مبيعات بعد اليوم</div>`;
+
+  const byCashier = {};
+  orders.forEach(o=>{
+    const name = o.cashier || (o.source==='self-service' ? 'ذاتي (آيباد)' : 'غير محدد');
+    byCashier[name] = (byCashier[name]||0) + o.total;
+  });
+  const cashierBreakdown = Object.entries(byCashier).map(([name,v])=>
+    `<div class="breakdown-item">${name}: <b>${v} ر.س</b></div>`
+  ).join('');
+
+  const rows = orders.map(o=>`
+    <div class="sales-row">
+      <div class="sales-row-id">#${o.id}</div>
+      <div class="sales-row-mid">${timeHM(o.time)} — ${o.payMethod}
+        <span class="status-pill ${o.status==='done'?'status-done':'status-pending'}">${o.status==='done'?'جاهز':'قيد التحضير'}</span>
+      </div>
+      <div class="sales-row-total">${o.total} ر.س</div>
+    </div>
+  `).join('') || `<div class="empty-note">ما فيه مبيعات اليوم بعد</div>`;
+
+  return `
+    ${topNav('sales')}
+    <div class="sales-screen">
+      <div class="stat-cards">
+        <div class="stat-card"><b>${total}</b><span>إجمالي مبيعات اليوم (ر.س)</span></div>
+        <div class="stat-card"><b>${count}</b><span>عدد الطلبات</span></div>
+        <div class="stat-card"><b>${avg}</b><span>متوسط الطلب (ر.س)</span></div>
+      </div>
+      <div class="breakdown">${breakdown}</div>
+      ${cashierBreakdown ? `<div class="field-label">حسب الكاشير</div><div class="breakdown">${cashierBreakdown}</div>` : ''}
+      <div>${rows}</div>
+    </div>
+  `;
+}
+
+/* ---------- Event binding ---------- */
+function bindTopNav(){
+  document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.addEventListener('click', ()=> goSection(el.dataset.goto));
+  });
+  const logoutBtn = document.querySelector('[data-logout]');
+  if(logoutBtn) logoutBtn.addEventListener('click', logout);
+}
+function bindLogin(){
+  const doLogin = ()=>{
+    const u = document.getElementById('login-username').value.trim();
+    const p = document.getElementById('login-password').value;
+    tryLogin(u, p);
+  };
+  document.querySelector('[data-login]').addEventListener('click', doLogin);
+  document.getElementById('login-password').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') doLogin();
+  });
+}
+function bindSale(){
+  bindTopNav();
+  document.querySelectorAll('[data-cat]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.cat = el.dataset.cat; render(); });
+  });
+  document.querySelectorAll('[data-add]').forEach(el=>{
+    el.addEventListener('click', ()=> addItem(el.dataset.add));
+  });
+  document.querySelectorAll('[data-inc]').forEach(el=>{
+    el.addEventListener('click', ()=> changeQty(el.dataset.inc, 1));
+  });
+  document.querySelectorAll('[data-dec]').forEach(el=>{
+    el.addEventListener('click', ()=> changeQty(el.dataset.dec, -1));
+  });
+  const goPay = document.querySelector('[data-go-pay]');
+  if(goPay) goPay.addEventListener('click', goToPay);
+  const clearBtn = document.querySelector('[data-clear-ticket]');
+  if(clearBtn) clearBtn.addEventListener('click', clearTicket);
+  const toggleBtn = document.querySelector('[data-toggle-ticket]');
+  if(toggleBtn) toggleBtn.addEventListener('click', toggleTicket);
+  document.querySelectorAll('[data-close-ticket]').forEach(el=>{
+    el.addEventListener('click', closeTicket);
+  });
+}
+function bindPay(){
+  document.querySelector('[data-back-sale]').addEventListener('click', backToSale);
+  document.querySelectorAll('[data-pay-method]').forEach(el=>{
+    el.addEventListener('click', ()=> selectPayMethod(el.dataset.payMethod));
+  });
+  const cashInput = document.getElementById('cash-input');
+  if(cashInput){
+    cashInput.addEventListener('input', ()=> setCash(cashInput.value.replace(/[^0-9.]/g,'')));
+    cashInput.focus();
+  }
+  document.querySelectorAll('[data-quick-cash]').forEach(el=>{
+    el.addEventListener('click', ()=> quickCash(el.dataset.quickCash));
+  });
+  const confirmBtn = document.querySelector('[data-confirm-pay]');
+  if(confirmBtn) confirmBtn.addEventListener('click', processPayment);
+}
+function bindReceipt(){
+  document.querySelector('[data-print]').addEventListener('click', printReceipt);
+  document.querySelector('[data-new-sale]').addEventListener('click', newSale);
+}
+function bindQueue(){
+  bindTopNav();
+  bindQueueButtons();
+}
+function bindQueueButtons(){
+  document.querySelectorAll('[data-done]').forEach(el=>{
+    el.addEventListener('click', ()=> markDone(Number(el.dataset.done)));
+  });
+}
+function bindSales(){
+  bindTopNav();
+}
+
+restoreSession();
+render();
+</script>
+</body>
+</html>

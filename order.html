@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ليت — نظام الطلبات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1B1611;
+    --surface: #26201A;
+    --surface-2: #221B14;
+    --ink: #F2E9DD;
+    --muted: rgba(242,233,221,0.62);
+    --line: rgba(242,233,221,0.12);
+    --brand: #D98F4C;
+    --brand-ink: #1B1611;
+    --staff: #6E9C87;
+    --radius: 2px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:'Tajawal', sans-serif;}
+  button{font-family:inherit;}
+  #root{height:100vh;overflow:hidden;position:relative;}
+
+  /* ---------- Header ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:18px 28px;border-bottom:1px solid var(--line);background:var(--bg);}
+  .logo{direction:ltr;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:20px;
+    letter-spacing:6px;color:var(--ink);}
+  .tabs{display:flex;gap:26px;}
+  .tab{font-size:14px;color:var(--muted);padding:6px 0;border-bottom:2px solid transparent;
+    cursor:pointer;user-select:none;transition:color .15s ease,border-color .15s ease;}
+  .tab.active{color:var(--ink);font-weight:600;border-color:var(--brand);}
+
+  /* ---------- Main layout ---------- */
+  .main{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 63px);}
+  .menu-panel{overflow-y:auto;padding:22px 28px 40px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+  .item-card{position:relative;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px;text-align:right;cursor:pointer;
+    min-height:92px;display:flex;flex-direction:column;justify-content:space-between;
+    transition:transform .1s ease, border-color .1s ease;-webkit-tap-highlight-color:transparent;}
+  .item-card:active{transform:scale(.95);border-color:var(--brand);}
+  .item-name{font-size:15px;font-weight:600;line-height:1.3;}
+  .item-desc{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;}
+  .item-price{font-family:'IBM Plex Mono',monospace;direction:ltr;font-size:13px;color:var(--brand);margin-top:10px;font-weight:500;}
+  .qty-badge{position:absolute;top:-8px;left:-8px;background:var(--brand);color:var(--brand-ink);
+    min-width:22px;height:22px;border-radius:50%;font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;padding:0 4px;}
+
+  /* ---------- Cart panel ---------- */
+  .cart-panel{background:var(--surface-2);border-left:1px solid var(--line);
+    padding:20px 20px 18px;display:flex;flex-direction:column;height:100%;overflow:hidden;}
+  .cart-close{display:none;}
+  .cart-title{font-family:'Tajawal',sans-serif;font-weight:700;font-size:17px;}
+  .cart-sub{font-size:11px;color:var(--muted);margin:3px 0 16px;}
+  .cart-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;padding-left:2px;}
+  .cart-empty{color:var(--muted);font-size:13px;text-align:center;margin-top:50px;line-height:1.6;}
+  .cart-line{display:flex;justify-content:space-between;align-items:center;
+    padding-bottom:11px;border-bottom:1px dashed var(--line);}
+  .cart-line-info{display:flex;flex-direction:column;gap:2px;}
+  .cart-line-name{font-size:13.5px;font-weight:600;}
+  .cart-line-price{font-family:'IBM Plex Mono',monospace;direction:ltr;font-size:11px;color:var(--muted);}
+  .qty-control{display:flex;align-items:center;gap:7px;}
+  .qty-btn{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);
+    background:var(--surface);font-size:15px;line-height:1;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;color:var(--ink);}
+  .qty-btn:active{background:var(--line);}
+  .qty-value{min-width:14px;text-align:center;font-size:13px;font-weight:700;}
+  .cart-footer{border-top:1px solid var(--line);padding-top:14px;margin-top:6px;}
+  .cart-total-row{display:flex;justify-content:space-between;align-items:baseline;
+    font-family:'Tajawal',sans-serif;font-weight:700;font-size:17px;margin-bottom:13px;}
+  .cart-total-row span:last-child{color:var(--brand);}
+  .confirm-btn{width:100%;padding:15px;background:var(--brand);color:var(--brand-ink);
+    border:none;border-radius:var(--radius);font-weight:600;font-size:15px;cursor:pointer;}
+  .confirm-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+
+  /* ---------- Checkout screen ---------- */
+  .checkout-screen{height:100vh;overflow-y:auto;padding:26px 28px 60px;box-sizing:border-box;}
+  .checkout-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+  .checkout-title{font-weight:700;font-size:19px;}
+  .checkout-wrap{max-width:480px;margin:0 auto;}
+  .summary-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;}
+  .summary-line{display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0;color:var(--muted);}
+  .summary-line span:first-child{color:var(--ink);}
+  .summary-line span:last-child{font-family:'IBM Plex Mono',monospace;direction:ltr;}
+  .summary-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;
+    padding-top:12px;border-top:1px solid var(--line);font-weight:700;font-size:16px;}
+  .summary-total-row span:last-child{font-family:'IBM Plex Mono',monospace;direction:ltr;color:var(--brand);}
+  .field-label{font-size:12.5px;color:var(--muted);margin:18px 0 8px;}
+  .pay-methods{display:flex;gap:10px;margin-bottom:16px;}
+  .pay-method{flex:1;border:1px solid var(--line);border-radius:var(--radius);padding:14px 8px;
+    text-align:center;font-size:12.5px;cursor:pointer;color:var(--muted);transition:border-color .15s ease,color .15s ease;}
+  .pay-method.active{border-color:var(--brand);color:var(--brand);background:rgba(217,143,76,0.08);}
+  .card-form{display:flex;flex-direction:column;gap:12px;margin-bottom:6px;}
+  .card-form input{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 14px;color:var(--ink);font-size:14px;font-family:'Tajawal',sans-serif;width:100%;}
+  .card-form input::placeholder{color:var(--muted);}
+  .card-row{display:flex;gap:12px;}
+  .card-row input{direction:ltr;text-align:left;font-family:'IBM Plex Mono',monospace;}
+  .applepay-note{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;text-align:center;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .pay-error{color:#E08A6B;font-size:12.5px;margin-bottom:10px;}
+  .demo-note{font-size:11px;color:var(--muted);text-align:center;margin-top:18px;line-height:1.6;}
+  .pay-btn{width:100%;padding:16px;background:var(--brand);color:var(--brand-ink);border:none;
+    border-radius:var(--radius);font-weight:700;font-size:15.5px;cursor:pointer;margin-top:14px;}
+  .pay-btn:disabled{opacity:.6;cursor:not-allowed;}
+  .pay-overlay{position:fixed;inset:0;background:rgba(27,22,17,.94);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;z-index:60;}
+  .spinner{width:38px;height:38px;border:3px solid var(--line);border-top-color:var(--brand);
+    border-radius:50%;animation:leet-spin .8s linear infinite;}
+  @keyframes leet-spin{to{transform:rotate(360deg);}}
+  .pay-overlay p{font-size:14.5px;color:var(--ink);}
+
+  /* ---------- Confirmation screen ---------- */
+  .confirm-screen{height:100vh;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;text-align:center;gap:10px;padding:40px;}
+  .confirm-number{font-family:'Tajawal',sans-serif;font-weight:800;font-size:58px;color:var(--brand);}
+  .confirm-msg{font-size:19px;font-weight:600;}
+  .confirm-hint{color:var(--muted);font-size:14px;max-width:340px;line-height:1.7;}
+  .new-order-btn{margin-top:22px;padding:13px 30px;border:1px solid var(--ink);
+    background:transparent;border-radius:var(--radius);font-size:14.5px;cursor:pointer;color:var(--ink);}
+  .new-order-btn:active{background:var(--ink);color:var(--surface);}
+
+  /* ---------- Staff screen ---------- */
+  .staff-toggle{position:fixed;top:7px;left:7px;width:14px;height:14px;opacity:.28;
+    cursor:pointer;z-index:50;border-radius:50%;background:var(--muted);}
+  .staff-screen{height:100vh;box-sizing:border-box;padding:26px 30px;display:flex;
+    flex-direction:column;overflow:hidden;}
+  .staff-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .staff-title{font-family:'Tajawal',sans-serif;font-weight:700;font-size:20px;color:var(--staff);}
+  .staff-count{font-size:12.5px;color:var(--muted);margin-top:3px;}
+  .back-btn{padding:10px 18px;border:1px solid var(--line);background:var(--surface);
+    border-radius:var(--radius);font-size:13.5px;cursor:pointer;color:var(--ink);}
+  .staff-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:20px;}
+  .order-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;border-right:4px solid var(--staff);}
+  .order-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .order-num{font-family:'Tajawal',sans-serif;font-weight:800;font-size:16px;}
+  .order-time{font-size:11.5px;color:var(--muted);}
+  .order-items{font-size:13px;color:var(--ink);line-height:1.9;margin-bottom:10px;}
+  .order-bottom{display:flex;justify-content:space-between;align-items:center;}
+  .order-total{font-family:'IBM Plex Mono',monospace;direction:ltr;font-weight:700;font-size:14px;color:var(--brand);}
+  .done-btn{padding:9px 16px;background:var(--staff);color:var(--brand-ink);border:none;
+    border-radius:var(--radius);font-size:13px;cursor:pointer;}
+  .staff-empty{color:var(--muted);text-align:center;margin-top:60px;font-size:14px;}
+
+  /* ---------- Mobile bottom bar + cart drawer ---------- */
+  .cart-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:35;}
+  .cart-backdrop.show{display:block;}
+  .mobile-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--brand);
+    color:var(--brand-ink);padding:14px 20px;align-items:center;justify-content:space-between;
+    z-index:30;cursor:pointer;border:none;font-family:inherit;}
+  .mobile-bar-count{font-weight:600;font-size:13.5px;}
+  .mobile-bar-total{font-weight:700;font-family:'IBM Plex Mono',monospace;direction:ltr;font-size:16px;}
+
+  @media (max-width: 720px){
+    .topbar{padding:14px 16px;}
+    .logo{font-size:16px;letter-spacing:4px;}
+    .tabs{gap:16px;overflow-x:auto;max-width:62vw;-ms-overflow-style:none;scrollbar-width:none;}
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab{font-size:13px;white-space:nowrap;flex:0 0 auto;}
+    .main{grid-template-columns:1fr;height:calc(100vh - 57px);}
+    .menu-panel{padding:16px 16px 90px;}
+    .grid{gap:10px;}
+    .item-card{min-height:82px;padding:13px;}
+    .mobile-bar{display:flex;}
+    .cart-panel{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;height:auto;
+      max-height:80vh;border-radius:18px 18px 0 0;border-left:none;
+      border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.45);
+      z-index:40;transform:translateY(100%);transition:transform .25s ease;}
+    .cart-panel.open{transform:translateY(0);}
+    .cart-panel{padding-top:44px;}
+    .cart-close{display:flex;align-items:center;justify-content:center;width:30px;height:30px;
+      border-radius:50%;background:var(--surface);border:1px solid var(--line);
+      position:absolute;top:12px;left:16px;font-size:14px;cursor:pointer;}
+    .staff-screen{padding:18px 18px;}
+    .staff-title{font-size:17px;}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+const CATEGORIES = [
+  {id:'espresso', name:'بار الإسبريسو'},
+  {id:'daily',    name:'قهوة اليوم'},
+  {id:'cold',     name:'المشروبات الباردة'},
+  {id:'bakery',   name:'من الفاترينة'}
+];
+
+const ITEMS = [
+  {id:'esp1', cat:'espresso', name:'إسبريسو', price:12},
+  {id:'esp2', cat:'espresso', name:'دبل إسبريسو', price:15},
+  {id:'esp3', cat:'espresso', name:'أمريكانو', price:14},
+  {id:'esp4', cat:'espresso', name:'كورتادو', price:16},
+  {id:'esp5', cat:'espresso', name:'فلات وايت', price:18},
+  {id:'esp6', cat:'espresso', name:'كابتشينو', price:17},
+  {id:'esp7', cat:'espresso', name:'لاتيه', price:18},
+  {id:'daily1', cat:'daily', name:'تقطير اليوم', desc:'اسأل الباريستا عن حبة اليوم', price:20},
+  {id:'cold1', cat:'cold', name:'كولد برو', price:18},
+  {id:'cold2', cat:'cold', name:'آيس لاتيه', price:19},
+  {id:'cold3', cat:'cold', name:'سبانش لاتيه', price:20},
+  {id:'cold4', cat:'cold', name:'آيس أمريكانو', price:15},
+  {id:'bak1', cat:'bakery', name:'كرواسون زبدة', price:10},
+  {id:'bak2', cat:'bakery', name:'رول القرفة', price:14},
+  {id:'bak3', cat:'bakery', name:'كوكيز البيت', price:8},
+];
+
+const ORDERS_KEY = 'leet-orders';
+
+let state = {
+  screen: 'menu',   // menu | checkout | confirm | staff
+  cat: 'espresso',
+  cart: {},         // itemId -> qty
+  cartOpen: false,  // mobile cart drawer
+  payMethod: 'mada',
+  paying: false,
+  payError: '',
+  lastOrder: null,
+  staffOrders: []
+};
+let staffPoll = null;
+
+window.addEventListener('storage', (e)=>{
+  if(e.key === ORDERS_KEY && state.screen === 'staff') refreshStaff();
+});
+
+function itemById(id){ return ITEMS.find(i => i.id === id); }
+
+function cartCount(){
+  return Object.values(state.cart).reduce((s,q)=>s+q,0);
+}
+function cartTotal(){
+  return Object.entries(state.cart).reduce((s,[id,q])=> s + itemById(id).price*q, 0);
+}
+
+function addItem(id){
+  state.cart[id] = (state.cart[id]||0) + 1;
+  render();
+}
+function changeQty(id, delta){
+  const next = (state.cart[id]||0) + delta;
+  if(next <= 0){ delete state.cart[id]; } else { state.cart[id] = next; }
+  render();
+}
+
+async function readQueue(){
+  try{
+    const raw = localStorage.getItem(ORDERS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+async function writeQueue(queue){
+  try{ localStorage.setItem(ORDERS_KEY, JSON.stringify(queue)); }
+  catch(e){ console.error('storage error', e); }
+}
+
+function payMethodLabel(key){
+  return {mada:'مدى', card:'فيزا / ماستركارد', applepay:'Apple Pay'}[key] || key;
+}
+
+async function confirmOrder(){
+  if(cartCount() === 0) return;
+  const items = Object.entries(state.cart).map(([id,qty])=>{
+    const it = itemById(id);
+    return {name: it.name, price: it.price, qty};
+  });
+  const total = cartTotal();
+  const queue = await readQueue();
+  const nextId = queue.reduce((m,o)=>Math.max(m,o.id),0) + 1;
+  const order = {id: nextId, items, total, status:'pending', time: Date.now(), payMethod: payMethodLabel(state.payMethod), source: 'self-service'};
+  queue.push(order);
+  await writeQueue(queue);
+
+  state.lastOrder = order;
+  state.cart = {};
+  state.cartOpen = false;
+  state.paying = false;
+  state.screen = 'confirm';
+  render();
+
+  setTimeout(()=>{
+    if(state.screen === 'confirm'){ goHome(); }
+  }, 8000);
+}
+
+function goToCheckout(){
+  if(cartCount() === 0) return;
+  state.cartOpen = false;
+  state.payError = '';
+  state.screen = 'checkout';
+  render();
+}
+function backToCart(){
+  state.screen = 'menu';
+  render();
+}
+function selectPayMethod(key){
+  state.payMethod = key;
+  state.payError = '';
+  render();
+}
+function processPayment(){
+  if(state.payMethod !== 'applepay'){
+    const num = document.getElementById('card-number');
+    const exp = document.getElementById('card-expiry');
+    const cvv = document.getElementById('card-cvv');
+    const filled = num && exp && cvv &&
+      num.value.replace(/\s/g,'').length >= 12 &&
+      exp.value.trim().length >= 4 &&
+      cvv.value.trim().length >= 3;
+    if(!filled){
+      state.payError = 'أكمل بيانات البطاقة أول';
+      render();
+      return;
+    }
+  }
+  state.paying = true;
+  render();
+  setTimeout(confirmOrder, 1400);
+}
+
+function toggleCart(){
+  state.cartOpen = !state.cartOpen;
+  render();
+}
+function closeCart(){
+  state.cartOpen = false;
+  render();
+}
+
+function goHome(){
+  window.location.href = 'index.html';
+}
+
+function resetToMenu(){
+  state.screen = 'menu';
+  state.cat = 'espresso';
+  state.lastOrder = null;
+  render();
+}
+
+async function openStaff(){
+  state.screen = 'staff';
+  await refreshStaff();
+  render();
+  if(staffPoll) clearInterval(staffPoll);
+  staffPoll = setInterval(refreshStaff, 3500);
+}
+function closeStaff(){
+  state.screen = 'menu';
+  if(staffPoll){ clearInterval(staffPoll); staffPoll = null; }
+  render();
+}
+async function refreshStaff(){
+  const queue = await readQueue();
+  state.staffOrders = queue.filter(o => o.status === 'pending').sort((a,b)=>a.id-b.id);
+  if(state.screen === 'staff') renderStaffListOnly();
+}
+async function markDone(orderId){
+  const queue = await readQueue();
+  const o = queue.find(x=>x.id === orderId);
+  if(o) o.status = 'done';
+  await writeQueue(queue);
+  await refreshStaff();
+  render();
+}
+
+function timeAgo(ts){
+  const mins = Math.max(0, Math.round((Date.now()-ts)/60000));
+  if(mins < 1) return 'الآن';
+  if(mins === 1) return 'قبل دقيقة';
+  return 'قبل ' + mins + ' دقائق';
+}
+
+/* ---------- Rendering ---------- */
+function render(){
+  const root = document.getElementById('root');
+  if(state.screen === 'confirm'){ root.innerHTML = renderConfirmScreen(); bindConfirm(); return; }
+  if(state.screen === 'checkout'){ root.innerHTML = renderCheckoutScreen(); bindCheckout(); return; }
+  if(state.screen === 'staff'){ root.innerHTML = renderStaffScreen(); bindStaff(); return; }
+  root.innerHTML = renderMenuScreen();
+  bindMenu();
+}
+
+function renderMenuScreen(){
+  const tabs = CATEGORIES.map(c =>
+    `<div class="tab ${c.id===state.cat?'active':''}" data-cat="${c.id}">${c.name}</div>`
+  ).join('');
+
+  const items = ITEMS.filter(i => i.cat === state.cat).map(i => {
+    const qty = state.cart[i.id]||0;
+    return `<div class="item-card" data-add="${i.id}">
+      ${qty>0 ? `<div class="qty-badge">${qty}</div>` : ''}
+      <div>
+        <div class="item-name">${i.name}</div>
+        ${i.desc ? `<div class="item-desc">${i.desc}</div>` : ''}
+      </div>
+      <div class="item-price">${i.price} ر.س</div>
+    </div>`;
+  }).join('');
+
+  const cartLines = Object.entries(state.cart).map(([id,qty])=>{
+    const it = itemById(id);
+    return `<div class="cart-line">
+      <div class="cart-line-info">
+        <div class="cart-line-name">${it.name}</div>
+        <div class="cart-line-price">${it.price} ر.س</div>
+      </div>
+      <div class="qty-control">
+        <div class="qty-btn" data-dec="${id}">−</div>
+        <div class="qty-value">${qty}</div>
+        <div class="qty-btn" data-inc="${id}">+</div>
+      </div>
+    </div>`;
+  }).join('') || `<div class="cart-empty">اختر أصنافك من القائمة<br>وبتظهر هنا</div>`;
+
+  const total = cartTotal();
+  const disabled = cartCount()===0 ? 'disabled' : '';
+
+  const count = cartCount();
+
+  return `
+    <div class="staff-toggle" data-open-staff title="للفريق"></div>
+    <div class="topbar">
+      <div class="logo">L E E T·</div>
+      <div class="tabs">${tabs}</div>
+    </div>
+    <div class="main">
+      <div class="menu-panel"><div class="grid">${items}</div></div>
+      <div class="cart-backdrop ${state.cartOpen?'show':''}" data-close-cart></div>
+      <div class="cart-panel ${state.cartOpen?'open':''}">
+        <div class="cart-close" data-close-cart>✕</div>
+        <div class="cart-title">طلبك</div>
+        <div class="cart-sub">راجع أصنافك قبل التأكيد</div>
+        <div class="cart-list">${cartLines}</div>
+        <div class="cart-footer">
+          <div class="cart-total-row"><span>الإجمالي</span><span>${total} ر.س</span></div>
+          <button class="confirm-btn" data-confirm ${disabled}>متابعة للدفع</button>
+        </div>
+      </div>
+    </div>
+    <button class="mobile-bar" data-toggle-cart>
+      <span class="mobile-bar-count">${count > 0 ? count + ' صنف في السلة' : 'السلة فارغة'}</span>
+      <span class="mobile-bar-total">${total} ر.س</span>
+    </button>
+  `;
+}
+
+function renderCheckoutScreen(){
+  const lines = Object.entries(state.cart).map(([id,qty])=>{
+    const it = itemById(id);
+    return `<div class="summary-line"><span>${it.name} × ${qty}</span><span>${it.price*qty} ر.س</span></div>`;
+  }).join('');
+  const total = cartTotal();
+
+  const methods = ['mada','card','applepay'].map(key=>{
+    const label = key==='mada' ? 'مدى' : key==='card' ? 'فيزا / ماستركارد' : 'Apple Pay';
+    return `<div class="pay-method ${state.payMethod===key?'active':''}" data-pay-method="${key}">${label}</div>`;
+  }).join('');
+
+  const cardForm = state.payMethod === 'applepay' ? `
+    <div class="applepay-note">بتأكد العملية عبر Apple Pay على جهازك</div>
+  ` : `
+    <div class="card-form">
+      <input id="card-number" type="text" inputmode="numeric" placeholder="رقم البطاقة" maxlength="19">
+      <div class="card-row">
+        <input id="card-expiry" type="text" inputmode="numeric" placeholder="MM/YY" maxlength="5">
+        <input id="card-cvv" type="text" inputmode="numeric" placeholder="CVV" maxlength="3">
+      </div>
+      <input id="card-name" type="text" placeholder="اسم حامل البطاقة (اختياري)">
+    </div>
+  `;
+
+  const overlay = state.paying ? `
+    <div class="pay-overlay">
+      <div class="spinner"></div>
+      <p>جارٍ معالجة الدفع...</p>
+    </div>
+  ` : '';
+
+  return `
+    <div class="checkout-screen">
+      <div class="checkout-wrap">
+        <div class="checkout-header">
+          <div class="back-btn" data-back-cart>رجوع</div>
+          <div class="checkout-title">الدفع</div>
+        </div>
+
+        <div class="summary-box">
+          ${lines}
+          <div class="summary-total-row"><span>الإجمالي</span><span>${total} ر.س</span></div>
+        </div>
+
+        <div class="field-label">طريقة الدفع</div>
+        <div class="pay-methods">${methods}</div>
+
+        ${cardForm}
+
+        ${state.payError ? `<div class="pay-error">${state.payError}</div>` : ''}
+
+        <button class="pay-btn" data-pay-now ${state.paying?'disabled':''}>ادفع ${total} ر.س</button>
+        <div class="demo-note">صفحة تجريبية للعرض فقط — لا يتم خصم أي مبلغ حقيقي</div>
+      </div>
+    </div>
+    ${overlay}
+  `;
+}
+
+function renderConfirmScreen(){
+  const o = state.lastOrder;
+  return `
+    <div class="confirm-screen">
+      <div class="confirm-number">#${o.id}</div>
+      <div class="confirm-msg">تم الدفع بنجاح</div>
+      <div class="confirm-hint">دفعت عبر ${o.payMethod} — سلّم الآيباد للباريستا وراح ننادي رقم طلبك عند الجاهزية.</div>
+      <button class="new-order-btn" data-go-home>الرجوع للرئيسية</button>
+    </div>
+  `;
+}
+
+function renderStaffScreen(){
+  return `
+    <div class="staff-screen">
+      <div class="staff-header">
+        <div>
+          <div class="staff-title">طلبات واردة</div>
+          <div class="staff-count">${state.staffOrders.length} طلب بانتظار التحضير</div>
+        </div>
+        <div class="back-btn" data-close-staff>رجوع للقائمة</div>
+      </div>
+      <div class="staff-list" id="staff-list">${renderStaffList()}</div>
+    </div>
+  `;
+}
+function renderStaffList(){
+  if(state.staffOrders.length === 0){
+    return `<div class="staff-empty">ما فيه طلبات حالياً</div>`;
+  }
+  return state.staffOrders.map(o=>{
+    const itemsHtml = o.items.map(i => `${i.name} × ${i.qty}`).join('<br>');
+    return `<div class="order-card">
+      <div class="order-top">
+        <div class="order-num">طلب #${o.id}</div>
+        <div class="order-time">${timeAgo(o.time)}</div>
+      </div>
+      <div class="order-items">${itemsHtml}</div>
+      <div class="order-bottom">
+        <div class="order-total">${o.total} ر.س</div>
+        <button class="done-btn" data-done="${o.id}">تم التحضير</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderStaffListOnly(){
+  const el = document.getElementById('staff-list');
+  if(el) el.innerHTML = renderStaffList();
+  const countEl = document.querySelector('.staff-count');
+  if(countEl) countEl.textContent = state.staffOrders.length + ' طلب بانتظار التحضير';
+  bindStaffListButtons();
+}
+
+/* ---------- Event binding ---------- */
+function bindMenu(){
+  document.querySelectorAll('[data-cat]').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.cat = el.dataset.cat; render(); });
+  });
+  document.querySelectorAll('[data-add]').forEach(el=>{
+    el.addEventListener('click', ()=> addItem(el.dataset.add));
+  });
+  document.querySelectorAll('[data-inc]').forEach(el=>{
+    el.addEventListener('click', ()=> changeQty(el.dataset.inc, 1));
+  });
+  document.querySelectorAll('[data-dec]').forEach(el=>{
+    el.addEventListener('click', ()=> changeQty(el.dataset.dec, -1));
+  });
+  const confirmBtn = document.querySelector('[data-confirm]');
+  if(confirmBtn) confirmBtn.addEventListener('click', goToCheckout);
+  const staffToggle = document.querySelector('[data-open-staff]');
+  if(staffToggle) staffToggle.addEventListener('click', openStaff);
+  const mobileBar = document.querySelector('[data-toggle-cart]');
+  if(mobileBar) mobileBar.addEventListener('click', toggleCart);
+  document.querySelectorAll('[data-close-cart]').forEach(el=>{
+    el.addEventListener('click', closeCart);
+  });
+}
+function bindConfirm(){
+  const btn = document.querySelector('[data-go-home]');
+  if(btn) btn.addEventListener('click', goHome);
+}
+function bindCheckout(){
+  const back = document.querySelector('[data-back-cart]');
+  if(back) back.addEventListener('click', backToCart);
+  document.querySelectorAll('[data-pay-method]').forEach(el=>{
+    el.addEventListener('click', ()=> selectPayMethod(el.dataset.payMethod));
+  });
+  const payBtn = document.querySelector('[data-pay-now]');
+  if(payBtn) payBtn.addEventListener('click', processPayment);
+
+  const num = document.getElementById('card-number');
+  if(num) num.addEventListener('input', ()=>{
+    let v = num.value.replace(/\D/g,'').slice(0,16);
+    num.value = v.replace(/(\d{4})(?=\d)/g,'$1 ');
+  });
+  const exp = document.getElementById('card-expiry');
+  if(exp) exp.addEventListener('input', ()=>{
+    let v = exp.value.replace(/\D/g,'').slice(0,4);
+    exp.value = v.length > 2 ? v.slice(0,2)+'/'+v.slice(2) : v;
+  });
+  const cvv = document.getElementById('card-cvv');
+  if(cvv) cvv.addEventListener('input', ()=>{
+    cvv.value = cvv.value.replace(/\D/g,'').slice(0,3);
+  });
+}
+function bindStaff(){
+  document.querySelector('[data-close-staff]').addEventListener('click', closeStaff);
+  bindStaffListButtons();
+}
+function bindStaffListButtons(){
+  document.querySelectorAll('[data-done]').forEach(el=>{
+    el.addEventListener('click', ()=> markDone(Number(el.dataset.done)));
+  });
+}
+
+render();
+</script>
+</body>
+</html>
